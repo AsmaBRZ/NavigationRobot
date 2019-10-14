@@ -75,8 +75,8 @@ def strategyGating(arbitrationMethod,verbose=True):
             print('Persistent Random selection : to be implemented')
   #------------------------------------------------
   elif arbitrationMethod=='qlearning':
-        gamma = rew +
-    print('Q-Learning selection : to be implemented')
+        choice = qlearning()
+
   #------------------------------------------------
   else:
     print(arbitrationMethod+' unknown.')
@@ -116,6 +116,75 @@ def buildStateFromSensors(laserRanges,radar,dist2goal):
   #print('buildStateFromSensors: State: '+S)
 
   return S
+
+def qlearning(alpha=0.4, beta=4, gamma=0.95):
+  global S_t
+  global S_tm1
+  global Q
+  global rew
+  global choice
+  global changed
+  global choice_tm1
+  global tLastChoice
+    
+  if rew != 0 or S_tm1 != S_t or changed is True:
+      print("train")
+      delta = rew + gamma  * np.max(Q[S_t]) - Q[S_tm1][choice_tm1]
+      Q[S_tm1][choice_tm1]  = Q[S_tm1][choice_tm1] + alpha * delta
+
+      print("{} : {}".format(S_tm1, Q[S_tm1][choice_tm1]))
+      rew = 0
+      
+  t = time.time()
+  
+  
+    
+  if t - tLastChoice < 2 or S_tm1 == S_t or rew == 0 :
+        changed = False
+        return choice
+    
+  changed = True
+  tLastChoice = t
+  
+  print("decision")
+  return discreteProb(softmax(Q, S_tm1, beta))
+
+  def softmax(Q,x,beta):
+    # Returns a soft-max probability distribution over actions
+    # Inputs :
+    # - Q : a Q-function represented as a nX times nU matrix
+    # - x : the state for which we want the soft-max distribution
+    # - tau : temperature parameter of the soft-max distribution
+    # Output :
+    # - p : probability of each action according to the soft-max distribution
+    
+    p = np.zeros((len(Q[x])))
+    sump = 0
+    for i in range(len(p)) :
+        p[i] = np.exp((Q[x][i] * beta))
+        sump += p[i]
+    
+    p = p/sump
+    
+    return p
+
+def discreteProb(p):
+        # Draw a random number using probability table p (column vector)
+        # Suppose probabilities p=[p(1) ... p(n)] for the values [1:n] are given, sum(p)=1 
+        # and the components p(j) are nonnegative. 
+        # To generate a random sample of size m from this distribution,
+        #imagine that the interval (0,1) is divided into intervals with the lengths p(1),...,p(n). 
+        # Generate a uniform number rand, if this number falls in the jth interval given the discrete distribution,
+        # return the value j. Repeat m times.
+        r = np.random.random()
+        cumprob=np.hstack((np.zeros(1),p.cumsum()))
+        sample = -1
+        for j in range(p.size):
+            if (r>cumprob[j]) & (r<=cumprob[j+1]):
+                sample = j
+                break
+        return sample
+
 
 #--------------------------------------
 def main():
