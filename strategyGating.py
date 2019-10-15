@@ -7,6 +7,7 @@ import random #used for the random choice of a y
 import sys
 import numpy as np
 import math
+import itertools 
 
 #--------------------------------------
 # Position of the goal:
@@ -39,11 +40,25 @@ angleFMax=143
 angleRMin=144
 angleRMax=199
 
+
+
 # Q-learning related stuff:
 # definition of states at time t and t+1
+def buildQ():
+    all_list = [['0','1'],['0','1'],['0','1'],['0','1','2','3','4','5','6','7'],['0','1','2'] ]
+    permutations= list(itertools.product(*all_list)) 
+    new_list = []
+    for l in permutations:
+        new_list.append(''.join(l))
+    Q=dict()
+    for s in new_list:
+        Q[s]={0:0,1:0}
+    return Q
+
 S_t = ''
 S_tm1 = ''
-
+Q=buildQ()
+initLearning=True
 #--------------------------------------
 # the function that selects which controller (radarGuidance or wallFollower) to use
 # sets the global variable "choice" to 0 (wallFollower) or 1 (radarGuidance)
@@ -55,6 +70,8 @@ def strategyGating(arbitrationMethod,verbose=True):
   global rew
   global init
   global Q
+    
+  choice_tm1 = choice
   # The chosen gating strategy is to be coded here:
   #------------------------------------------------
   if arbitrationMethod=='random':
@@ -75,7 +92,8 @@ def strategyGating(arbitrationMethod,verbose=True):
             print('Persistent Random selection : to be implemented')
   #------------------------------------------------
   elif arbitrationMethod=='qlearning':
-        choice = qlearning()
+        choice=qlearning()
+        
 
   #------------------------------------------------
   else:
@@ -85,6 +103,49 @@ def strategyGating(arbitrationMethod,verbose=True):
   if verbose:
     print("strategyGating: Active Module: "+i2name[choice])
 
+
+
+
+def qlearning(alpha=0.4, beta=4, gamma=0.95):
+  global S_t
+  global S_tm1
+  global Q
+  global rew
+  global choice
+  global changed
+  global choice_tm1
+  global tLastChoice
+  if rew != 0 or S_tm1 != S_t or changed is True:
+      #print("train")
+      #print('rew',rew)
+      #print('gamma',gamma)
+      #print('st',S_t)
+      Q_st=np.fromiter(Q[S_t].values(), dtype=float)
+      #print(Q_st)
+      print(S_tm1)
+      Q_stm1=np.fromiter(Q[S_tm1].values(), dtype=float)
+      #print(Q_stm1)
+      delta = rew + gamma  * np.max(Q_st) - Q_stm1[choice_tm1]
+      print('delta',delta)
+      print('choice_tm1]',choice_tm1)
+      Q[S_tm1][choice_tm1]  = Q[S_tm1][choice_tm1] + alpha * delta
+
+      print("{} : {}".format(S_tm1, Q[S_tm1][choice_tm1]))
+      rew = 0
+      
+  t = time.time()
+ 
+  if t - tLastChoice < 2 or S_tm1 == S_t or rew == 0 :
+        changed = False
+        return choice
+    
+  changed = True
+  tLastChoice = t
+  
+  print("decision")
+  return discreteProb(softmax(Q, S_tm1, beta))
+
+    
 #--------------------------------------
 def buildStateFromSensors(laserRanges,radar,dist2goal):
   S   = ''
@@ -117,39 +178,7 @@ def buildStateFromSensors(laserRanges,radar,dist2goal):
 
   return S
 
-def qlearning(alpha=0.4, beta=4, gamma=0.95):
-  global S_t
-  global S_tm1
-  global Q
-  global rew
-  global choice
-  global changed
-  global choice_tm1
-  global tLastChoice
-    
-  if rew != 0 or S_tm1 != S_t or changed is True:
-      print("train")
-      delta = rew + gamma  * np.max(Q[S_t]) - Q[S_tm1][choice_tm1]
-      Q[S_tm1][choice_tm1]  = Q[S_tm1][choice_tm1] + alpha * delta
-
-      print("{} : {}".format(S_tm1, Q[S_tm1][choice_tm1]))
-      rew = 0
-      
-  t = time.time()
-  
-  
-    
-  if t - tLastChoice < 2 or S_tm1 == S_t or rew == 0 :
-        changed = False
-        return choice
-    
-  changed = True
-  tLastChoice = t
-  
-  print("decision")
-  return discreteProb(softmax(Q, S_tm1, beta))
-
-  def softmax(Q,x,beta):
+def softmax(Q,x,beta=4):
     # Returns a soft-max probability distribution over actions
     # Inputs :
     # - Q : a Q-function represented as a nX times nU matrix
@@ -163,10 +192,9 @@ def qlearning(alpha=0.4, beta=4, gamma=0.95):
     for i in range(len(p)) :
         p[i] = np.exp((Q[x][i] * beta))
         sump += p[i]
-    
     p = p/sump
-    
     return p
+
 
 def discreteProb(p):
         # Draw a random number using probability table p (column vector)
@@ -193,9 +221,7 @@ def main():
   global rew
   global init
   init = True
-  global Q=np.zeros((128,2))
-  global Q_list=[]
-  global policy_list=[]
+  global initLearning
   settings = Settings('worlds/entonnoir.xml')
 
   env_map = settings.map()
@@ -203,7 +229,8 @@ def main():
 
   d = Display(env_map, robot)
 
-  method = 'randomPersist'
+  
+  method='qlearning'
   # experiment related stuff
   startT = time.time()
   trial = 0
@@ -218,13 +245,13 @@ def main():
     # get position data from the simulation
     #-------------------------------------
     pos = robot.get_pos()
-    # print("##########\nStep "+str(i)+" robot pos: x = "+str(int(pos.x()))+" y = "+str(int(pos.y()))+" theta = "+str(int(pos.theta()/math.pi*180.)))
+    #print("##########\nStep "+str(i)+" robot pos: x = "+str(int(pos.x()))+" y = "+str(int(pos.y()))+" theta = "+str(int(pos.theta()/math.pi*180.)))
 
     # has the robot found the reward ?
     #------------------------------------
     dist2goal = math.sqrt((pos.x()-goalx)**2+(pos.y()-goaly)**2)
     # if so, teleport it to initial position, store trial duration, set reward to 1:
-    if (dist2goal<20): # 30
+    if (dist2goal<20): # 30       
       print('***** REWARD REACHED *****')
       pos.set_x(initx)
       pos.set_y(inity)
@@ -254,16 +281,22 @@ def main():
     #------------------------------------
     if bumperR or bumperL or min(laserRanges[angleFMin:angleFMax]) < th_obstacleTooClose:
       rew = -1
-      print("***** BING! ***** "+i2name[choice])
+      #print("***** BING! ***** "+i2name[choice])
 
     # 3) build the state, that will be used by learning, from the sensory data
     #------------------------------------
     S_tm1 = S_t
+    print('azzzchoice_tm1',choice_tm1)
+    
     S_t = buildStateFromSensors(laserRanges,radar, dist2goal)
 
     #------------------------------------
-    
-    strategyGating(method,verbose=False)
+    if(initLearning):
+        strategyGating('randomPersist',verbose=False)
+        initLearning=False
+    else:
+        strategyGating(method,verbose=False)
+        
     if choice==0:
       v = wallFollower(laserRanges,verbose=False)
     else:
@@ -281,3 +314,5 @@ def main():
 if __name__ == '__main__':
   random.seed()
   main()
+     
+    
