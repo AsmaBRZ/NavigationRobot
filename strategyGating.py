@@ -135,7 +135,7 @@ def qlearning(alpha=0.4, beta=4, gamma=0.95):
       
   t = time.time()
  
-  if t - tLastChoice >= 2 or S_tm1 != S_t or rew != 0 or choice == choice_tm1:
+  if t - tLastChoice >= 2 or S_tm1 != S_t or rew != 0:
         return discreteProb(softmax(Q, S_tm1, beta))
   else:
     tLastChoice = t
