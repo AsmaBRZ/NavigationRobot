@@ -8,7 +8,7 @@ import sys
 import numpy as np
 import math
 import itertools 
-
+import threading
 #--------------------------------------
 # Position of the goal:
 goalx = 300
@@ -21,7 +21,7 @@ choice = -1
 choice_tm1 = -1
 tLastChoice = 0
 rew = 0
-
+trial=0
 i2name=['wallFollower','radarGuidance']
 
 # Parameters of State building:
@@ -44,6 +44,9 @@ angleRMax=199
 
 # Q-learning related stuff:
 # definition of states at time t and t+1
+
+
+
 def buildQ():
     all_list = [['0','1'],['0','1'],['0','1'],['0','1','2','3','4','5','6','7'],['0','1','2'] ]
     permutations= list(itertools.product(*all_list)) 
@@ -59,6 +62,15 @@ S_t = ''
 S_tm1 = ''
 Q=buildQ()
 initLearning=True
+savePos=[[] for _ in range(n)]
+pos=0
+
+
+#save the robot's position every second
+def savePos(robot):
+    threading.Timer(1.0, savePos).start)
+    savePos[trial].append(robot.get_pos())
+
 #--------------------------------------
 # the function that selects which controller (radarGuidance or wallFollower) to use
 # sets the global variable "choice" to 0 (wallFollower) or 1 (radarGuidance)
@@ -219,21 +231,21 @@ def main():
   global init
   init = True
   global initLearning
+  global robot   
   settings = Settings('worlds/entonnoir.xml')
-
   env_map = settings.map()
   robot = settings.robot()
-
+  savePos(robot)
   d = Display(env_map, robot)
 
   
   method='qlearning'
   # experiment related stuff
   startT = time.time()
-  trial = 0
-  nbTrials = 20
+  global trial = 0
+  nbTrials = 40
   trialDuration = np.zeros((nbTrials))
-
+  global savePos
   i = 0
   while trial<nbTrials:
     # update the display
@@ -305,6 +317,10 @@ def main():
 
   # When the experiment is over:
   np.savetxt('log/'+str(startT)+'-TrialDurations-'+method+'.txt',trialDuration)
+  #save the Qvalues of the last trial
+  np.save("log/"+str(startT)+'-TrialDurations-Qvalues 40.txt', Q)
+  np.save("log/"+str(startT)+'-TrialDurations-Robot s pos.txt', savePos)
+  
 
 #--------------------------------------
 
