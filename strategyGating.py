@@ -115,7 +115,7 @@ def qlearning(alpha=0.4, beta=4, gamma=0.95):
   global changed
   global choice_tm1
   global tLastChoice
-  if rew != 0 or S_tm1 != S_t or changed is True:
+  if rew != 0 or S_tm1 != S_t or choice != choice_tm1 is True:
       #print("train")
       #print('rew',rew)
       #print('gamma',gamma)
@@ -135,15 +135,12 @@ def qlearning(alpha=0.4, beta=4, gamma=0.95):
       
   t = time.time()
  
-  if t - tLastChoice < 2 or S_tm1 == S_t or rew == 0 :
-        changed = False
-        return choice
-    
-  changed = True
-  tLastChoice = t
-  
-  print("decision")
-  return discreteProb(softmax(Q, S_tm1, beta))
+  if t - tLastChoice >= 2 or S_tm1 != S_t or rew != 0 or choice == choice_tm1:
+        return discreteProb(softmax(Q, S_tm1, beta))
+  else:
+    tLastChoice = t
+    return choice
+
 
     
 #--------------------------------------
@@ -314,5 +311,3 @@ def main():
 if __name__ == '__main__':
   random.seed()
   main()
-     
-    
