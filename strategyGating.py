@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 
 from radarGuidance import *
 from wallFollower import *
@@ -226,7 +225,7 @@ def discreteProb(p):
 
 
 #--------------------------------------
-def main():
+def main(exp):
   global S_t
   global S_tm1
   global rew
@@ -254,8 +253,9 @@ def main():
   i = 0
   tL=time.time()
   j=0
+  for cp in range(40):
+      posT.append([])
   while trial<nbTrials:
-    posT.append([])
     j=0
     # update the display
     #-------------------------------------
@@ -263,6 +263,9 @@ def main():
     # get position data from the simulation
     #-------------------------------------
     pos = robot.get_pos()
+    if( time.time()-tL <1 ):
+      tL=time.time() 
+      posT[trial].append([int(pos.x()),int(pos.y())])
     #print("##########\nStep "+str(i)+" robot pos: x = "+str(int(pos.x()))+" y = "+str(int(pos.y()))+" theta = "+str(int(pos.theta()/math.pi*180.)))
 
     # has the robot found the reward ?
@@ -319,9 +322,7 @@ def main():
       v = wallFollower(laserRanges,verbose=False)
     else:
       v = radarGuidance(laserRanges,bumperL,bumperR,radar,verbose=False)
-    if( time.time()-tL <1 ):
-      tL=time.time() 
-      posT[trial].append([int(pos.x()),int(pos.y())])
+    
 
     i+=1
     j+=1
@@ -332,7 +333,7 @@ def main():
 	
 
   # When the experiment is over:
-  np.savetxt('log/'+str(startT)+'-TrialDurations-'+method+'.txt',trialDuration)
+  np.savetxt('log/'+str(startT)+'-TrialDurations.txt',trialDuration)
   dictlist=[]
   for key, value in Q.items():
     temp = [key,value]
@@ -340,12 +341,17 @@ def main():
 
   	
   #save the Qvalues of the last trial
-  np.savetxt('log/'+str(startT) +'_Qlearning_values.txt',str(dictlist))
-  np.savetxt("log/"+str(startT)+'-TrialDurations-Robotpos.txt', posT))
-  
+  f=open("log/QV"+str(exp)+".txt", "w")
+  f.write(str(dictlist))
+  f.close()
+  f=open("log/POS"+str(exp)+".txt", "w")
+  f.write(str(posT))
+  f.close()
+ 
 
 #--------------------------------------
 
 if __name__ == '__main__':
   random.seed()
-  main()
+  for i in range(4):
+      main(i)

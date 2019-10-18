@@ -1,6 +1,7 @@
 import numpy as np
 import csv
 import ast
+import matplotlib.pyplot as plt
 
 
 def getPercentiles(filepath):
@@ -28,11 +29,11 @@ def openFile(filepath):
     with open(filepath) as fp:
        line = fp.readline()
        if line != '':
-           print(line)
+           #print(line)
            line = ast.literal_eval(line)
            #print(line)
-           tab1=line[0]
-           tab2=line[1]
+           tab1=line[:10]
+           tab2=line[30:40]
            with open('deb.csv', 'w') as writeFile:
                writer = csv.writer(writeFile)
                writer.writerows(tab1)
@@ -44,24 +45,41 @@ def openFile(filepath):
     return tab1,tab2
 
     
-def getHistoDeb(data):
+def getHistoDeb(x,y):
     
-    column_labels = np.arange(0,300,50)
-    row_labels = np.arange(0,400,50)
-    data = datadeb # quatre lignes de trois colonnes
-    fig, axis = plt.subplots() # il me semble que c'est une bonne habitude de faire supbplots
-    heatmap = axis.pcolor(data, cmap=plt.cm.Blues) # heatmap contient les valeurs
+    plt.hist2d(x, y)
+    plt.show()
+
 
     
     
 #filepath='Analyzis/1571139560.5373607-TrialDurations-randomPersist.txt'
 #filepath= 'log/1571389756.340987_Qlearning_values.npy'
 #print(getPercentiles(filepath))
-t1,t2=openFile('t.txt')
+t1,t2=openFile('log/POS0.txt')
+#print(t1)
 
-xt1=[i[0] for i in t1]
-yt1=[i[1] for i in t1]
-xt2=[i[0] for i in t2]
-yt2=[i[1] for i in t2]
+for i in range(len(t1)):
+    #print(t1[i])
+    xt1=[j[0]  for j in t1[i]]
+    yt1=[j[1]  for j in t1[i]]
+
+print(yt1)
+
+for i in range(len(t2)):
+    #print(t1[i])
+    xt2=[j[0]  for j in t2[i]]
+    yt2=[j[1]  for j in t2[i]]
+
+print(yt1)
+
+plt.hist2d(xt2, yt2, bins=[12, 12], normed=True, cmap='plasma')
+plt.colorbar()
+plt.show()
+#xt1=[i[0] for i in t1]
+#yt1=[i[1] for i in t1]
+#print(xt1)
+#xt2=[i[0] for i in t2]
+#yt2=[i[1] for i in t2]
 
 
