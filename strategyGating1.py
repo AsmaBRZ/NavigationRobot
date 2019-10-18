@@ -226,7 +226,7 @@ def discreteProb(p):
 
 
 #--------------------------------------
-def main(exp):
+def main():
   global S_t
   global S_tm1
   global rew
@@ -250,6 +250,8 @@ def main(exp):
   trial = 0
   nbTrials = 40
   trialDuration = np.zeros((nbTrials))
+  positions = []
+  position = []
  
   i = 0
   tL=time.time()
@@ -263,6 +265,10 @@ def main(exp):
     # get position data from the simulation
     #-------------------------------------
     pos = robot.get_pos()
+    
+    if( time.time()-tL <1 ):
+        tL=time.time()
+        position.append([int(pos.x()),int(pos.y())])
     #print("##########\nStep "+str(i)+" robot pos: x = "+str(int(pos.x()))+" y = "+str(int(pos.y()))+" theta = "+str(int(pos.theta()/math.pi*180.)))
 
     # has the robot found the reward ?
@@ -281,6 +287,9 @@ def main(exp):
       print("Trial "+str(trial)+" duration:"+str(trialDuration[trial]))
       trial +=1
       rew = 1
+      positions.append(position)
+      position = []
+
 
     # get the sensor inputs:
     #------------------------------------
@@ -319,9 +328,7 @@ def main(exp):
       v = wallFollower(laserRanges,verbose=False)
     else:
       v = radarGuidance(laserRanges,bumperL,bumperR,radar,verbose=False)
-    if( time.time()-tL <1 ):
-      tL=time.time() 
-      posT[trial].append([int(pos.x()),int(pos.y())])
+  
 
     i+=1
     j+=1
@@ -340,17 +347,20 @@ def main(exp):
 
   	
   #save the Qvalues of the last trial
-  f = open('log/'+str(startT) +'_Qlearning_values'+str(exp)+'.txt',"w")
-  f.write( str(dictlist) )
-  f.close()
-  f = open('log/'+str(startT)+'-TrialDurations-Robotpos'+str(exp)+'.txt',"w")
-  f.write( str(posT) )
-  f.close()
+  np.savetxt('log/'+str(startT)+'-TrialDurations-'+method+'.txt',trialDuration)
+  np.save('log/'+str(startT) +'_Qlearning_pos', positions)
+  np.save('log/'+str(startT) +'_Qlearning_values', str(Q))
+#f = open('log/'+str(startT) +'_Qlearning_values'+str(exp)+'.txt',"w")
+#f.write( str(dictlist) )
+# f.close()
+#f = open('log/'+str(startT)+'-TrialDurations-Robotpos'+str(exp)+'.txt',"w")
+#f.write( str(posT) )
+#f.close()
   
 
 #--------------------------------------
 
 if __name__ == '__main__':
   random.seed()
-  for i in range(10):
-      main(i)
+      #for i in range(10):
+      main()
