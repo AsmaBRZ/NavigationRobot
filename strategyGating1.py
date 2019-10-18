@@ -226,7 +226,7 @@ def discreteProb(p):
 
 
 #--------------------------------------
-def main():
+def main(exp):
   global S_t
   global S_tm1
   global rew
@@ -332,7 +332,7 @@ def main():
 	
 
   # When the experiment is over:
-  np.savetxt('log/'+str(startT)+'-TrialDurations-'+method+'.txt',trialDuration)
+  np.savetxt('log/'+str(startT)+'-TrialDurations-'+str(method)+str(exp)+'.txt',trialDuration)
   dictlist=[]
   for key, value in Q.items():
     temp = [key,value]
@@ -340,12 +340,17 @@ def main():
 
   	
   #save the Qvalues of the last trial
-  np.savetxt('log/'+str(startT) +'_Qlearning_values.txt',str(dictlist))
-  np.savetxt("log/"+str(startT)+'-TrialDurations-Robotpos.txt', posT))
+  f = open('log/'+str(startT) +'_Qlearning_values'+str(exp)+'.txt',"w")
+  f.write( str(dictlist) )
+  f.close()
+  f = open('log/'+str(startT)+'-TrialDurations-Robotpos'+str(exp)+'.txt',"w")
+  f.write( str(posT) )
+  f.close()
   
 
 #--------------------------------------
 
 if __name__ == '__main__':
   random.seed()
-  main()
+  for i in range(10):
+      main(i)

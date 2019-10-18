@@ -340,8 +340,14 @@ def main():
 
   	
   #save the Qvalues of the last trial
-  np.savetxt('log/'+str(startT) +'_Qlearning_values.txt',str(dictlist))
-  np.savetxt("log/"+str(startT)+'-TrialDurations-Robotpos.txt', posT))
+  #save the Qvalues of the last trial
+  f = open('log/'+str(startT) +'_Qlearning_values3.txt',"w")
+  f.write( str(dictlist) )
+  f.close()
+  f = open('log/'+str(startT)+'-TrialDurations-Robotpos3.txt',"w")
+  f.write( str(posT) )
+  f.close()
+  
   
 
 #--------------------------------------
