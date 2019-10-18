@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 
 from radarGuidance import *
 from wallFollower import *
@@ -254,8 +253,9 @@ def main(exp):
   i = 0
   tL=time.time()
   j=0
+  for cp in range(40):
+      posT.append([])
   while trial<nbTrials:
-    posT.append([])
     j=0
     # update the display
     #-------------------------------------
@@ -263,6 +263,9 @@ def main(exp):
     # get position data from the simulation
     #-------------------------------------
     pos = robot.get_pos()
+    if( time.time()-tL <1 ):
+      tL=time.time() 
+      posT[trial].append([int(pos.x()),int(pos.y())])
     #print("##########\nStep "+str(i)+" robot pos: x = "+str(int(pos.x()))+" y = "+str(int(pos.y()))+" theta = "+str(int(pos.theta()/math.pi*180.)))
 
     # has the robot found the reward ?
@@ -319,9 +322,7 @@ def main(exp):
       v = wallFollower(laserRanges,verbose=False)
     else:
       v = radarGuidance(laserRanges,bumperL,bumperR,radar,verbose=False)
-    if( time.time()-tL <1 ):
-      tL=time.time() 
-      posT[trial].append([int(pos.x()),int(pos.y())])
+    
 
     i+=1
     j+=1
@@ -332,7 +333,7 @@ def main(exp):
 	
 
   # When the experiment is over:
-  np.savetxt('log/'+str(startT)+'-TrialDurations-'+str(method)+str(exp)+'.txt',trialDuration)
+  np.savetxt('log/'+str(startT)+'-TrialDurations.txt',trialDuration)
   dictlist=[]
   for key, value in Q.items():
     temp = [key,value]
@@ -340,17 +341,17 @@ def main(exp):
 
   	
   #save the Qvalues of the last trial
-  f = open('log/'+str(startT) +'_Qlearning_values'+str(exp)+'.txt',"w")
-  f.write( str(dictlist) )
+  f=open("log/QV"+str(exp)+".txt", "w")
+  f.write(str(dictlist))
   f.close()
-  f = open('log/'+str(startT)+'-TrialDurations-Robotpos'+str(exp)+'.txt',"w")
-  f.write( str(posT) )
+  f=open("log/POS"+str(exp)+".txt", "w")
+  f.write(str(posT))
   f.close()
-  
+ 
 
 #--------------------------------------
 
 if __name__ == '__main__':
   random.seed()
-  for i in range(10):
+  for i in range(4):
       main(i)
